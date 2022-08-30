@@ -65,7 +65,7 @@ app.post('/participants', async (req, res) => {
     res.sendStatus(201);
   } catch (err) {
     console.error({ err });
-    res.status(500).send('Error: Failed to register participant');
+    res.status(500).send('Error when trying to register participant');
   }
 });
 
@@ -76,8 +76,8 @@ app.get('/participants', async (req, res) => {
   try {
     const participants = await db.collection('participants').find();
     res.send(participants);
-  } catch (error) {
-    console.error({ error });
+  } catch (err) {
+    console.error({ err });
     res.status(500).send('Error: Failed to retrieve participants from Database');
   }
 });
@@ -87,11 +87,8 @@ app.get('/participants', async (req, res) => {
 //---------------------------------
 app.post('/messages', async (req, res) => {
   // Obtain message object from body and user from header
-  console.log('req.body = ', req.body);
-  console.log('req.headers = ', req.headers);
   const message = req.body;
   const { user } = req.headers;
-  console.log('user = ', user);
 
   // Validate message
   const messageSchema = joi.object({
@@ -119,7 +116,8 @@ app.post('/messages', async (req, res) => {
 
     // Send '201 Created' status code
     res.sendStatus(201);
-  } catch {
+  } catch (err) {
+    console.error({ err });
     return res.status(500).send('Error: Failed to store message in the Database');
   }
 });
@@ -129,8 +127,13 @@ app.post('/messages', async (req, res) => {
 //---------------------------------
 app.get('/messages', async (req, res) => {
   const messageLimit = parseInt(req.query.limit);
-  const { User: user } = req.headers;
-  console.log(user);
+  const { user } = req.headers;
+
+  try {
+  } catch (err) {
+    console.log({ err });
+    res.sendStatus(500).send('Error: Failed to retrieve messages from Database');
+  }
 });
 
 // Initialize Server
