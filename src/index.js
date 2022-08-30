@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import joi from 'joi';
 import { MongoClient } from 'mongodb';
 
 // Configure Dotenv
@@ -22,9 +23,12 @@ promise.catch((err) => {
 });
 
 // POST (/participants)
-app.post('/participants', (req, res) => {
-  const { name } = req.body;
-  console.log(name);
+app.post('/participants', async (req, res) => {
+  const participant = req.body;
+  console.log(participant);
+  const participantSchema = joi.object({ name: joi.string().required() });
+  const { validError } = participantSchema.validate(participant);
+  console.log(validError);
 });
 
 // Initialize Server
