@@ -64,6 +64,7 @@ app.post('/participants', async (req, res) => {
     // Send '201 Created' status code
     res.sendStatus(201);
   } catch (err) {
+    // Error when trying to register participant
     console.error({ err });
     res.status(500).send('Error when trying to register participant');
   }
@@ -77,6 +78,7 @@ app.get('/participants', async (req, res) => {
     const participants = await db.collection('participants').find();
     res.send(participants);
   } catch (err) {
+    // Error: Failed to retrieve participants from Database
     console.error({ err });
     res.status(500).send('Error: Failed to retrieve participants from Database');
   }
@@ -88,6 +90,7 @@ app.get('/participants', async (req, res) => {
 app.post('/messages', async (req, res) => {
   // Obtain message object from body and user from header
   const message = req.body;
+  const { to, text, type } = message;
   const { user } = req.headers;
 
   // Validate message
@@ -107,9 +110,9 @@ app.post('/messages', async (req, res) => {
     // Insert message in 'messages' collection
     const messageObj = {
       from: user,
-      to: message.to,
-      text: message.text,
-      type: message.type,
+      to,
+      text,
+      type,
       time: dayjs().format('HH:mm:ss'),
     };
     await db.collection('messages').insertOne(messageObj);
@@ -117,6 +120,7 @@ app.post('/messages', async (req, res) => {
     // Send '201 Created' status code
     res.sendStatus(201);
   } catch (err) {
+    // Error: Failed to store message in the Database
     console.error({ err });
     return res.status(500).send('Error: Failed to store message in the Database');
   }
@@ -130,7 +134,21 @@ app.get('/messages', async (req, res) => {
   const { user } = req.headers;
 
   try {
+    const messages = await db.collection('messages').find().toArray();
+    const filteredMessages = messages.filter((message) => {
+      const toUser = message.to === 'Todos' || message.to === user || message.from === user;
+      const isPublic = message.type === 'message';
+      return toUser || isPublic;
+    });
+    if (messageLimit && messageLimit !== NaN) {
+      // Send the last messageLimit messages available to user
+      return res.send(filteredMessages.slice(-messageLimit));
+    }
+
+    // Send all messages available to user
+    res.send(filteredMessages);
   } catch (err) {
+    // Error: Failed to retrieve messages from Database
     console.log({ err });
     res.sendStatus(500).send('Error: Failed to retrieve messages from Database');
   }
