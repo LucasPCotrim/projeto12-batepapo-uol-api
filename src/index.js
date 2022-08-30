@@ -103,7 +103,7 @@ app.post('/messages', async (req, res) => {
   if (error) return res.sendStatus(422);
 
   try {
-    // Check if sender is in the participants list
+    // Check if sender is in the database
     const participantSender = await db.collection('participants').findOne({ name: user });
     if (!participantSender) return res.sendStatus(422);
 
@@ -161,6 +161,15 @@ app.get('/messages', async (req, res) => {
 app.post('/status', async (req, res) => {
   // Obtain user from header
   const { user } = req.header;
+  try {
+    // Check if user is in the database
+    const participant = await db.collection('participants').findOne({ name: user });
+    if (!participant) return res.sendStatus(404);
+  } catch (err) {
+    // Error: Failed to update status
+    console.log({ err });
+    res.sendStatus(500).send('Error: Failed to update status');
+  }
 });
 
 // Initialize Server
