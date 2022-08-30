@@ -51,7 +51,7 @@ app.post('/participants', async (req, res) => {
     // Insert participant in 'participants' collection
     const participantObj = { name: participantName, lastStatus: Date.now() };
     await db.collection('participants').insertOne(participantObj);
-    // Insert log in message in 'messages' collection
+    // Insert log-in message in 'messages' collection
     const logInMessageObj = {
       from: participantName,
       to: 'Todos',
@@ -88,6 +88,7 @@ app.get('/participants', async (req, res) => {
 app.post('/messages', async (req, res) => {
   // Obtain message object from body and user from header
   const { message } = req.body;
+  const { to, text, type } = message;
   const { user } = req.headers;
 
   // Validate message
@@ -103,6 +104,19 @@ app.post('/messages', async (req, res) => {
     // Check if sender is in the participants list
     const participantSender = await db.collection('participants').findOne({ name: user });
     if (!participantSender) return res.sendStatus(422);
+
+    // Insert message in 'messages' collection
+    const messageObj = {
+      from: user,
+      to,
+      text,
+      type,
+      time: dayjs().format('HH:mm:ss'),
+    };
+    await db.collection('messages').insertOne(messageObj);
+
+    // Send '201 Created' status code
+    res.sendStatus(201);
   } catch {
     return res.status(500).send('Error: Failed to store message in the Database');
   }
