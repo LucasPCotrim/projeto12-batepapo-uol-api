@@ -24,11 +24,26 @@ promise.catch((err) => {
 
 // POST (/participants)
 app.post('/participants', async (req, res) => {
+  // Obtain participant object
   const participant = req.body;
-  console.log(participant);
+  const { participantName } = participant;
+  // Validate participant
   const participantSchema = joi.object({ name: joi.string().required() });
   const { validError } = participantSchema.validate(participant);
-  console.log(validError);
+  if (validError) {
+    return res.sendStatus(422);
+  }
+  // Check if participant is already registered
+  try {
+    const participantAlreadyRegistered = await db
+      .collection('participants')
+      .findOne({ name: participantName });
+    // Participant is already registered
+    if (participantAlreadyRegistered) return res.sendStatus(409);
+  } catch (err) {
+    console.error({ err });
+    res.status(500).send('Error: Failed to register participant');
+  }
 });
 
 // Initialize Server
