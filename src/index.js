@@ -165,6 +165,14 @@ app.post('/status', async (req, res) => {
     // Check if user is in the database
     const participant = await db.collection('participants').findOne({ name: user });
     if (!participant) return res.sendStatus(404);
+
+    // Update user status with current time
+    await db
+      .collection('participants')
+      .updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
+
+    // Send '200 OK' status code
+    res.sendStatus(200);
   } catch (err) {
     // Error: Failed to update status
     console.log({ err });
