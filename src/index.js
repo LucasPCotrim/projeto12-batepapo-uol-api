@@ -1,3 +1,5 @@
+//Imports
+//---------------------------------
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -23,7 +25,9 @@ promise.catch((err) => {
   console.log('Error when trying to connect to the database:', err);
 });
 
+//---------------------------------
 // POST (/participants)
+//---------------------------------
 app.post('/participants', async (req, res) => {
   // Obtain participant object
   const participant = req.body;
@@ -64,6 +68,20 @@ app.post('/participants', async (req, res) => {
   } catch (err) {
     console.error({ err });
     res.status(500).send('Error: Failed to register participant');
+  }
+});
+
+//---------------------------------
+// GET (/participants)
+//---------------------------------
+app.get('/participants', async (req, res) => {
+  try {
+    const participants = await db.collection('users').find();
+    console.log(participants);
+    res.send(participants);
+  } catch (error) {
+    console.error({ error });
+    res.status(500).send('Error: Failed to retrieve participants from Database');
   }
 });
 
