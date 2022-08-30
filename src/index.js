@@ -75,7 +75,7 @@ app.post('/participants', async (req, res) => {
 //---------------------------------
 app.get('/participants', async (req, res) => {
   try {
-    const participants = await db.collection('participants').find();
+    const participants = await db.collection('participants').find().toArray();
     res.send(participants);
   } catch (err) {
     // Error: Failed to retrieve participants from Database
@@ -185,7 +185,6 @@ const INACTIVE_CHECK_FREQ = 15 * 1000;
 // Inactivity time threshold is 10s
 const INACTIVE_TIMEOUT = 10 * 1000;
 setInterval(async () => {
-  console.log('removendo a galera');
   const timeBreakpoint = Date.now() - INACTIVE_TIMEOUT;
   try {
     const inactiveParticipants = await db
