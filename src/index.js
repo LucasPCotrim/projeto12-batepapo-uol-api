@@ -38,8 +38,8 @@ app.post('/participants', async (req, res) => {
   const { validError } = participantSchema.validate(participant);
   if (validError) return res.sendStatus(422);
 
-  // Check if participant is already registered
   try {
+    // Check if participant is already registered
     const participantAlreadyRegistered = await db
       .collection('participants')
       .findOne({ name: participantName });
@@ -98,6 +98,14 @@ app.post('/messages', async (req, res) => {
   });
   const { error } = messageSchema.validate(message);
   if (error) return res.sendStatus(422);
+
+  try {
+    // Check if sender is in the participants list
+    const participantSender = await db.collection('participants').findOne({ name: user });
+    if (!participantSender) return res.sendStatus(422);
+  } catch {
+    return res.status(500).send('Error: Failed to store message in the Database');
+  }
 });
 
 // Initialize Server
