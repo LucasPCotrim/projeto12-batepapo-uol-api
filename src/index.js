@@ -161,7 +161,6 @@ app.get('/messages', async (req, res) => {
 app.post('/status', async (req, res) => {
   // Obtain user from header
   const { user } = req.headers;
-  console.log(user);
   try {
     // Check if user is in the database
     const participant = await db.collection('participants').findOne({ name: user });
@@ -180,6 +179,38 @@ app.post('/status', async (req, res) => {
     res.sendStatus(500).send('Error: Failed to update status');
   }
 });
+
+// Remove inactive users every 15s
+const INACTIVE_CHECK_FREQ = 15 * 1000;
+// Inactivity time threshold is 10s
+const INACTIVE_TIMEOUT = 10 * 1000;
+setInterval(async () => {
+  console.log('removendo a galera');
+  const timeBreakpoint = Date.now() - INACTIVE_TIMEOUT;
+  try {
+    const inactiveParticipants = await db
+      .collection('participants')
+      .find({ lastStatus: { $lte: timeBreakpoint } })
+      .toArray();
+    if (inactiveParticipants.length > 0) {
+      const InactiveUpdateMessages = inactiveParticipants.map((participant) => {
+        return {
+          from: participant.name,
+          to: 'Todos',
+          text: 'sai da sala...',
+          type: 'status',
+          time: dayjs().format('HH:mm:ss'),
+        };
+      });
+      await db.collection('participants').deleteMany({ lastStatus: { $lte: timeBreakpoint } });
+      await db.collection('messages').insertMany(InactiveUpdateMessages);
+    }
+  } catch (err) {
+    // Error: Failed to remove inactive users
+    console.log({ err });
+    res.sendStatus(500).send('Error: Failed to remove inactive users');
+  }
+}, INACTIVE_CHECK_FREQ);
 
 // Initialize Server
 const PORT = process.env.PORT || 5000;
