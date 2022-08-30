@@ -160,7 +160,8 @@ app.get('/messages', async (req, res) => {
 //---------------------------------
 app.post('/status', async (req, res) => {
   // Obtain user from header
-  const { user } = req.header;
+  const { user } = req.headers;
+  console.log(user);
   try {
     // Check if user is in the database
     const participant = await db.collection('participants').findOne({ name: user });
