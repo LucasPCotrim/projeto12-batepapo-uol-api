@@ -36,9 +36,7 @@ app.post('/participants', async (req, res) => {
   // Validate participant
   const participantSchema = joi.object({ name: joi.string().required() });
   const { validError } = participantSchema.validate(participant);
-  if (validError) {
-    return res.sendStatus(422);
-  }
+  if (validError) return res.sendStatus(422);
 
   // Check if participant is already registered
   try {
@@ -77,12 +75,29 @@ app.post('/participants', async (req, res) => {
 app.get('/participants', async (req, res) => {
   try {
     const participants = await db.collection('participants').find();
-    console.log(participants);
     res.send(participants);
   } catch (error) {
     console.error({ error });
     res.status(500).send('Error: Failed to retrieve participants from Database');
   }
+});
+
+//---------------------------------
+// POST (/messages)
+//---------------------------------
+app.post('/messages', async (req, res) => {
+  // Obtain message object from body and user from header
+  const { message } = req.body;
+  const { user } = req.headers;
+
+  // Validate message
+  const messageSchema = joi.object({
+    to: joi.string().required(),
+    text: joi.string().required(),
+    type: joi.string().valid('message', 'private_message'),
+  });
+  const { error } = messageSchema.validate(message);
+  if (error) return res.sendStatus(422);
 });
 
 // Initialize Server
