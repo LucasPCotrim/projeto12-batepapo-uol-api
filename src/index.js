@@ -21,6 +21,12 @@ promise.catch((err) => {
   console.log('Error when trying to connect to the database:', err);
 });
 
+// POST (/participants)
+app.post('/participants', (req, res) => {
+  const { name } = req.body;
+  console.log(name);
+});
+
 // Initialize Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
