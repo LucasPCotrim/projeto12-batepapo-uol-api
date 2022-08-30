@@ -130,6 +130,7 @@ app.post('/messages', async (req, res) => {
 // GET (/messages)
 //---------------------------------
 app.get('/messages', async (req, res) => {
+  // Obtain user from header and optional message limit from query string
   const messageLimit = parseInt(req.query.limit);
   const { user } = req.headers;
 
@@ -152,6 +153,14 @@ app.get('/messages', async (req, res) => {
     console.log({ err });
     res.sendStatus(500).send('Error: Failed to retrieve messages from Database');
   }
+});
+
+//---------------------------------
+// POST (/status)
+//---------------------------------
+app.post('/status', async (req, res) => {
+  // Obtain user from header
+  const { user } = req.header;
 });
 
 // Initialize Server
