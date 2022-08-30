@@ -87,9 +87,11 @@ app.get('/participants', async (req, res) => {
 //---------------------------------
 app.post('/messages', async (req, res) => {
   // Obtain message object from body and user from header
-  const { message } = req.body;
-  const { to, text, type } = message;
+  console.log('req.body = ', req.body);
+  console.log('req.headers = ', req.headers);
+  const message = req.body;
   const { user } = req.headers;
+  console.log('user = ', user);
 
   // Validate message
   const messageSchema = joi.object({
@@ -108,9 +110,9 @@ app.post('/messages', async (req, res) => {
     // Insert message in 'messages' collection
     const messageObj = {
       from: user,
-      to,
-      text,
-      type,
+      to: message.to,
+      text: message.text,
+      type: message.type,
       time: dayjs().format('HH:mm:ss'),
     };
     await db.collection('messages').insertOne(messageObj);
@@ -120,6 +122,15 @@ app.post('/messages', async (req, res) => {
   } catch {
     return res.status(500).send('Error: Failed to store message in the Database');
   }
+});
+
+//---------------------------------
+// GET (/messages)
+//---------------------------------
+app.get('/messages', async (req, res) => {
+  const messageLimit = parseInt(req.query.limit);
+  const { User: user } = req.headers;
+  console.log(user);
 });
 
 // Initialize Server
