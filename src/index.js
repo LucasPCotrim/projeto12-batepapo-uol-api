@@ -147,14 +147,16 @@ app.get('/messages', async (req, res) => {
   const { user } = req.headers;
 
   try {
+    // Obtain messages from database
     const messages = await db.collection('messages').find().toArray();
+    // Filter messages user has acces to
     const filteredMessages = messages.filter((message) => {
       const toUser = message.to === 'Todos' || message.to === user || message.from === user;
       const isPublic = message.type === 'message';
       return toUser || isPublic;
     });
     if (messageLimit && messageLimit !== NaN) {
-      // Send the last messageLimit messages available to user
+      // Send the last 'messageLimit' messages available to user
       return res.send(filteredMessages.slice(-messageLimit));
     }
 
@@ -198,7 +200,7 @@ app.post('/status', async (req, res) => {
 app.delete('/messages/:messageId', async (req, res) => {
   // Obtain message from route parameters and user from header
   const messageId = req.params.messageId;
-  const { user } = req.headers;
+  const user = sanitizeData(req.headers.user);
 
   try {
     // Check if message is in the database
@@ -213,12 +215,69 @@ app.delete('/messages/:messageId', async (req, res) => {
       if (err) return res.status(500).send('Error: Failed to delete message from Database');
       console.log(`deleted document (_id: ${messageId}) from messages database`);
     });
+
     // Send '200 OK' status code
     res.sendStatus(200);
   } catch (err) {
     // Error: Failed to delete message from Database
     console.log({ err });
     res.status(500).send('Error: Failed to delete message from Database');
+  }
+});
+
+//---------------------------------
+// PUT (/messages/MESSAGE_ID)
+//---------------------------------
+app.put('/messages/:messageId', async (req, res) => {
+  // Obtain message from route parameters and user from header
+  const messageId = req.params.messageId;
+  const user = sanitizeData(req.headers.user);
+  // Obtain updated message from body
+  const messageRaw = req.body;
+  const message = {
+    to: sanitizeData(messageRaw.to),
+    text: sanitizeData(messageRaw.text),
+    type: sanitizeData(messageRaw.type),
+  };
+  // Validate message
+  const messageSchema = joi.object({
+    to: joi.string().required(),
+    text: joi.string().required(),
+    type: joi.string().valid('message', 'private_message'),
+  });
+  const { error } = messageSchema.validate(message);
+  if (error) return res.sendStatus(422);
+
+  try {
+    // Check if user is in the database
+    const participantUser = await db.collection('participants').findOne({ name: user });
+    if (!participantUser) return res.sendStatus(422);
+
+    // Check if message is in the database
+    const messageOld = await db.collection('messages').findOne({ _id: ObjectId(messageId) });
+    if (!messageOld) return res.sendStatus(404);
+
+    // Check if user is the message sender
+    if (messageOld.from !== user) return res.sendStatus(401);
+
+    // Update message in the database
+    message.from = user;
+    console.log(message);
+    db.collection('messages').updateOne(
+      { _id: ObjectId(messageId) },
+      { $set: message },
+      function (err, res) {
+        if (err) return res.status(500).send('Error: Failed to update message from Database');
+        console.log(`updated document (_id: ${messageId}) in messages database`);
+      }
+    );
+
+    // Send '200 OK' status code
+    res.sendStatus(200);
+  } catch (err) {
+    // Error: Failed to update message from Database
+    console.log({ err });
+    res.status(500).send('Error: Failed to update message from Database');
   }
 });
 
@@ -256,7 +315,9 @@ setInterval(async () => {
   }
 }, INACTIVE_CHECK_FREQ);
 
+//---------------------------------
 // Initialize Server
+//---------------------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server listening on port: ${PORT}`);
