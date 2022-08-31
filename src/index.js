@@ -27,12 +27,19 @@ promise.catch((err) => {
 });
 
 //---------------------------------
+// Auxiliary function
+//---------------------------------
+function sanitizeData(string) {
+  return stripHtml(string).result.trim();
+}
+
+//---------------------------------
 // POST (/participants)
 //---------------------------------
 app.post('/participants', async (req, res) => {
   // Obtain participant object
   const participant = req.body;
-  const participantName = stripHtml(participant.name).result;
+  const participantName = sanitizeData(participant.name);
 
   // Validate participant
   const participantSchema = joi.object({ name: joi.string().required() });
@@ -90,9 +97,15 @@ app.get('/participants', async (req, res) => {
 //---------------------------------
 app.post('/messages', async (req, res) => {
   // Obtain message object from body and user from header
-  const message = req.body;
-  const { to, text, type } = message;
-  const { user } = req.headers;
+  const messageRaw = req.body;
+  const message = {
+    to: sanitizeData(messageRaw.to),
+    text: sanitizeData(messageRaw.text),
+    type: sanitizeData(messageRaw.type),
+  };
+  console.log(message);
+  const user = sanitizeData(req.headers.user);
+  console.log(user);
 
   // Validate message
   const messageSchema = joi.object({
@@ -111,9 +124,9 @@ app.post('/messages', async (req, res) => {
     // Insert message in 'messages' collection
     const messageObj = {
       from: user,
-      to,
-      text,
-      type,
+      to: message.to,
+      text: message.text,
+      type: message.type,
       time: dayjs().format('HH:mm:ss'),
     };
     await db.collection('messages').insertOne(messageObj);
