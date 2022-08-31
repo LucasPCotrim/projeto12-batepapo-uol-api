@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import joi from 'joi';
 import dayjs from 'dayjs';
 import { stripHtml } from 'string-strip-html';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 // Configure Dotenv
 dotenv.config();
@@ -163,7 +163,7 @@ app.get('/messages', async (req, res) => {
   } catch (err) {
     // Error: Failed to retrieve messages from Database
     console.log({ err });
-    res.sendStatus(500).send('Error: Failed to retrieve messages from Database');
+    res.status(500).send('Error: Failed to retrieve messages from Database');
   }
 });
 
@@ -188,7 +188,7 @@ app.post('/status', async (req, res) => {
   } catch (err) {
     // Error: Failed to update status
     console.log({ err });
-    res.sendStatus(500).send('Error: Failed to update status');
+    res.status(500).send('Error: Failed to update status');
   }
 });
 
@@ -196,10 +196,35 @@ app.post('/status', async (req, res) => {
 // DELETE (/messages/MESSAGE_ID)
 //---------------------------------
 app.delete('/messages/:messageId', async (req, res) => {
+  // Obtain message from route parameters and user from header
   const messageId = req.params.messageId;
-  console.log(messageId);
+  const { user } = req.headers;
+
+  try {
+    // Check if message is in the database
+    const message = await db.collection('messages').findOne({ _id: ObjectId(messageId) });
+    if (!message) return res.sendStatus(404);
+
+    // Check if user is the message sender
+    if (message.from !== user) return res.sendStatus(401);
+
+    // Remove message from 'messages' collection in the database
+    await db.collection('messages').deleteOne({ _id: ObjectId(messageId) }, (err, obj) => {
+      if (err) return res.status(500).send('Error: Failed to delete message from Database');
+      console.log(`deleted document (_id: ${messageId}) from messages database`);
+    });
+    // Send '200 OK' status code
+    res.sendStatus(200);
+  } catch (err) {
+    // Error: Failed to delete message from Database
+    console.log({ err });
+    res.status(500).send('Error: Failed to delete message from Database');
+  }
 });
 
+//---------------------------------
+// Remove inactive users
+//---------------------------------
 // Remove inactive users every 15s
 const INACTIVE_CHECK_FREQ = 15 * 1000;
 // Inactivity time threshold is 10s
@@ -227,7 +252,7 @@ setInterval(async () => {
   } catch (err) {
     // Error: Failed to remove inactive users
     console.log({ err });
-    res.sendStatus(500).send('Error: Failed to remove inactive users');
+    res.status(500).send('Error: Failed to remove inactive users');
   }
 }, INACTIVE_CHECK_FREQ);
 
