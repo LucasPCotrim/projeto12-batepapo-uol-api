@@ -103,9 +103,7 @@ app.post('/messages', async (req, res) => {
     text: sanitizeData(messageRaw.text),
     type: sanitizeData(messageRaw.type),
   };
-  console.log(message);
   const user = sanitizeData(req.headers.user);
-  console.log(user);
 
   // Validate message
   const messageSchema = joi.object({
@@ -192,6 +190,14 @@ app.post('/status', async (req, res) => {
     console.log({ err });
     res.sendStatus(500).send('Error: Failed to update status');
   }
+});
+
+//---------------------------------
+// DELETE (/messages/MESSAGE_ID)
+//---------------------------------
+app.delete('/messages/:messageId', async (req, res) => {
+  const messageId = req.params.messageId;
+  console.log(messageId);
 });
 
 // Remove inactive users every 15s
