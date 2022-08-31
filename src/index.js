@@ -4,8 +4,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import joi from 'joi';
-import { MongoClient } from 'mongodb';
 import dayjs from 'dayjs';
+import { stripHtml } from 'string-strip-html';
+import { MongoClient } from 'mongodb';
 
 // Configure Dotenv
 dotenv.config();
@@ -31,7 +32,7 @@ promise.catch((err) => {
 app.post('/participants', async (req, res) => {
   // Obtain participant object
   const participant = req.body;
-  const { name: participantName } = participant;
+  const participantName = stripHtml(participant.name).result;
 
   // Validate participant
   const participantSchema = joi.object({ name: joi.string().required() });
