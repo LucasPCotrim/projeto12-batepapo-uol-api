@@ -263,14 +263,12 @@ app.put('/messages/:messageId', async (req, res) => {
     // Update message in the database
     message.from = user;
     console.log(message);
-    db.collection('messages').updateOne(
-      { _id: ObjectId(messageId) },
-      { $set: message },
-      function (err, res) {
+    await db
+      .collection('messages')
+      .updateOne({ _id: ObjectId(messageId) }, { $set: message }, function (err, res) {
         if (err) return res.status(500).send('Error: Failed to update message from Database');
         console.log(`updated document (_id: ${messageId}) in messages database`);
-      }
-    );
+      });
 
     // Send '200 OK' status code
     res.sendStatus(200);
