@@ -309,7 +309,6 @@ setInterval(async () => {
   } catch (err) {
     // Error: Failed to remove inactive users
     console.log({ err });
-    res.status(500).send('Error: Failed to remove inactive users');
   }
 }, INACTIVE_CHECK_FREQ);
 
